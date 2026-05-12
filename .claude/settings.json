@@ -1,0 +1,28 @@
+{
+  "hooks": {
+    "PostToolUse": [
+      {
+        "matcher": "Edit|Write|Bash",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "git rev-parse --git-dir >/dev/null 2>&1 && code-review-graph update --skip-flows --repo \"/Users/iscream/publishing&Design/\\u1100\\u116d\\u110b\\u1172\\u11a8\\u110b\\u116e\\u11ab\\u110b\\u1167\\u11bc\\u1110\\u1175\\u11b7/Publishing/00_Project/ice-planner-project\" || true",
+            "timeout": 30
+          }
+        ]
+      }
+    ],
+    "SessionStart": [
+      {
+        "matcher": "",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "git rev-parse --git-dir >/dev/null 2>&1 && code-review-graph status --repo \"/Users/iscream/publishing&Design/\\u1100\\u116d\\u110b\\u1172\\u11a8\\u110b\\u116e\\u11ab\\u110b\\u1167\\u11bc\\u1110\\u1175\\u11b7/Publishing/00_Project/ice-planner-project\" || echo 'Not a git repo, skipping'",
+            "timeout": 10
+          }
+        ]
+      }
+    ]
+  }
+}

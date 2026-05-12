@@ -1,0 +1,18 @@
+{
+  "name": "course-next-api",
+  "version": "1.0.0",
+  "description": "티처빌 AI 연수 목록 조회 - 로컬 테스트용",
+  "private": true,
+  "scripts": {
+    "dev": "next dev",
+    "build": "next build",
+    "start": "next start"
+  },
+  "dependencies": {
+    "axios": "^1.16.0",
+    "cheerio": "^1.2.0",
+    "next": "^15.3.0",
+    "react": "^19.0.0",
+    "react-dom": "^19.0.0"
+  }
+}

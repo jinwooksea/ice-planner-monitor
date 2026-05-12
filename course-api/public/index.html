@@ -1,0 +1,117 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>티처빌 강의 조회 테스트</title>
+  <link rel="stylesheet" href="style.css" />
+</head>
+<body>
+
+  <div class="layout">
+
+    <!-- ============================
+      좌측: 추천 강의 사이드바
+    ============================= -->
+    <aside class="sidebar">
+
+      <div class="sidebar-header">
+        <h2 class="sidebar-title">추천 강의</h2>
+        <button id="btn-load-recommand" class="btn-recommand">목록 불러오기</button>
+      </div>
+
+      <!-- 추천 목록 상태 메시지 -->
+      <div id="recommand-status" class="recommand-status" hidden></div>
+
+      <!-- 추천 목록 -->
+      <ul id="recommand-list" class="recommand-list"></ul>
+
+    </aside>
+
+    <!-- ============================
+      우측: 단건 조회 영역
+    ============================= -->
+    <main class="main-content">
+
+      <!-- 검색 영역 -->
+      <div class="search-wrap">
+        <h1 class="search-title">티처빌 강의 조회 테스트</h1>
+        <p class="search-desc">강의 ID(goodsCode)를 입력하고 조회하기 버튼을 누르세요.<br/>왼쪽 추천 목록에서 강의를 클릭하면 자동으로 입력됩니다.</p>
+
+        <div class="search-row">
+          <input
+            type="text"
+            id="input-goods-code"
+            class="search-input"
+            value="O1005871"
+            placeholder="예: O1005871"
+          />
+          <button id="btn-search" class="search-btn">조회하기</button>
+        </div>
+      </div>
+
+      <!-- 상태 메시지 -->
+      <div id="status-message" class="status-message" hidden></div>
+
+      <!-- 결과 영역 -->
+      <div id="result-wrap" class="result-wrap" hidden>
+
+        <!-- 상품 정보 미수신 안내 -->
+        <div id="goods-data-notice" class="notice-banner" hidden>
+          ⚠️ 가격·이미지·카테고리 정보를 가져오지 못했습니다.<br/>
+          <small>server.js의 <code>GOODS_DETAIL_URL</code>을 Network 탭에서 확인한 실제 URL로 교체해 주세요.</small>
+        </div>
+
+        <!-- 강의 기본 정보 카드 -->
+        <div class="card card-info">
+          <div class="card-thumbnail-wrap">
+            <img id="result-image" class="card-thumbnail" src="" alt="강의 썸네일" />
+          </div>
+          <div class="card-meta">
+            <p id="cache-indicator" class="cache-indicator" hidden></p>
+            <p class="meta-badge" id="result-large-category"></p>
+            <h2 class="card-title" id="result-title"></h2>
+            <ul class="meta-list">
+              <li><span class="meta-label">카테고리</span><span id="result-category" class="meta-value"></span></li>
+              <li><span class="meta-label">학점</span><span id="result-credit" class="meta-value"></span></li>
+              <li><span class="meta-label">연수 유형</span><span id="result-type" class="meta-value"></span></li>
+              <li><span class="meta-label">가격</span><span id="result-price" class="meta-value"></span></li>
+            </ul>
+          </div>
+        </div>
+
+        <!-- 차시 목록 카드 -->
+        <div class="card card-lessons">
+          <h3 class="card-section-title">차시 목록</h3>
+          <ul id="result-lessons" class="lesson-list"></ul>
+        </div>
+
+        <!-- 운영 일정 카드 -->
+        <div class="card card-schedules">
+          <h3 class="card-section-title">운영 기수 / 일정</h3>
+          <ul id="result-schedules" class="schedule-list"></ul>
+        </div>
+
+        <!-- 후기 카드 -->
+        <div class="card card-reviews">
+          <h3 class="card-section-title">수강 후기</h3>
+          <ul id="result-reviews" class="review-list"></ul>
+        </div>
+
+        <!-- 원본 JSON -->
+        <div class="card card-raw">
+          <details>
+            <summary class="raw-summary">원본 JSON 보기</summary>
+            <pre id="result-raw" class="raw-json"></pre>
+          </details>
+        </div>
+
+      </div><!-- /result-wrap -->
+
+    </main><!-- /main-content -->
+
+  </div><!-- /layout -->
+
+  <script src="app.js"></script>
+</body>
+</html>
