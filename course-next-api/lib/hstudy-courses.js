@@ -146,6 +146,7 @@ function normalizeItem(raw) {
     tutorName:    "",
     schedule:     "",
     registrationDateTime: "",
+    sortDate:       "",
     masterCourseId: "",
   };
 }

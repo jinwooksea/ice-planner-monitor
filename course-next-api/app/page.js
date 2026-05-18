@@ -71,11 +71,12 @@ function markNewCourses(rawCourses) {
   const now = Date.now();
 
   return rawCourses.map((c) => {
-    const dt = new Date(c.registrationDateTime);
-    const valid = c.registrationDateTime && !isNaN(dt.getTime());
+    const baseDate = c.sortDate || c.registrationDateTime || "";
+    const dt = new Date(baseDate);
+    const valid = baseDate && !isNaN(dt.getTime());
     if (!valid) return { ...c, isNew: false };
     const diffDays = (now - dt.getTime()) / (1000 * 60 * 60 * 24);
-    return { ...c, isNew: diffDays <= 7 };
+    return { ...c, isNew: diffDays >= 0 && diffDays <= 7 };
   });
 }
 
@@ -576,30 +577,6 @@ export default function Page() {
       [...(hstudyData || []), ...(netiData || [])].forEach((c) => {
         if (!mergedIds.has(c.id)) { rawMerged.push(c); mergedIds.add(c.id); }
       });
-      // [TEST] 신규 등록 UI 확인용 mock 데이터
-      const mockNewCourse = {
-        provider: "teacherville",
-        id: "mock-new-001",
-        title: "[TEST] 신규 AI 활용 연수",
-        credit: "2학점",
-        price: 0,
-        discountPrice: 0,
-        thumbnail: "https://picsum.photos/600/400",
-        detailUrl: "#",
-        badges: ["NEW"],
-        isNew: true,
-        newAt: new Date().toISOString(),
-        category: "디지털활용",
-        trainingType: "직무",
-        reviewCount: 0,
-        wishCount: 0,
-        tutorName: "테스트 강사",
-        schedule: "2026-05-01 ~ 2026-06-30",
-        registrationDateTime: new Date().toISOString(),
-        masterCourseId: "",
-      };
-      rawMerged.unshift(mockNewCourse);
-
       localStorage.setItem("prevCourses", JSON.stringify(rawMerged));
       const marked = markNewCourses(rawMerged);
       setCourses(marked);
@@ -727,8 +704,15 @@ export default function Page() {
       // 추천순: 랭킹 점수 내림차순
       return [...withScore].sort((a, b) => b.score - a.score);
     }
-    // 최신순: API 응답 순서 유지
-    return withScore;
+    // 최신순: sortDate 내림차순 (없는 항목은 뒤로)
+    return [...withScore].sort((a, b) => {
+      const aTime = a.sortDate ? new Date(a.sortDate).getTime() : 0;
+      const bTime = b.sortDate ? new Date(b.sortDate).getTime() : 0;
+      if (aTime && bTime) return bTime - aTime;
+      if (aTime && !bTime) return -1;
+      if (!aTime && bTime) return 1;
+      return 0;
+    });
   }, [courses, searchText, filterCredit, filterCategory, filterPriceIdx, filterType, filterProvider, sortKey, recommendIds]);
 
   // ── 더보기로 슬라이스 ────────────────────────────────────

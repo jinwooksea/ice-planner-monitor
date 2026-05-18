@@ -142,6 +142,7 @@ function normalizeItem(raw) {
     schedule:       raw.scheduleDateTime ?? "",
     // 정렬용 원본 등록일 (최신순 정렬에 사용)
     registrationDateTime: raw.registrationDateTime ?? "",
+    sortDate:       raw.registrationDateTime ?? "",
   };
 }
 

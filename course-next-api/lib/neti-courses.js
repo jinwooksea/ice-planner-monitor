@@ -85,8 +85,36 @@ function parseCoursesFromHtml(html) {
 
 // ── 정규화 ───────────────────────────────────────────────
 
+function extractFirstDate(text) {
+  const t = (text ?? "").trim();
+
+  // 한국어 형식: "2026년 5월 12일"
+  const korean = t.match(/(\d{4})년\s*(\d{1,2})월\s*(\d{1,2})일/);
+  if (korean) {
+    const [, y, m, d] = korean;
+    return `${y}-${m.padStart(2, "0")}-${d.padStart(2, "0")}`;
+  }
+
+  // 4자리 연도 구분자 형식: "2026-05-12", "2026.05.12", "2026/05/12", "2026. 5. 12"
+  const sep4 = t.match(/(\d{4})\s*[./\-]\s*(\d{1,2})\s*[./\-]\s*(\d{1,2})/);
+  if (sep4) {
+    const [, y, m, d] = sep4;
+    return `${y}-${m.padStart(2, "0")}-${d.padStart(2, "0")}`;
+  }
+
+  // 2자리 연도 구분자 형식: "26.05.13", "26. 05. 13", "26-05-13", "26/05/13"
+  const sep2 = t.match(/^(\d{2})\s*[./\-]\s*(\d{1,2})\s*[./\-]\s*(\d{1,2})/);
+  if (sep2) {
+    const [, y, m, d] = sep2;
+    return `20${y}-${m.padStart(2, "0")}-${d.padStart(2, "0")}`;
+  }
+
+  return "";
+}
+
 function normalizeItem(raw) {
   const applyCount = parseInt(String(raw.applyCountRaw ?? "").replace(/[^0-9]/g, ""), 10);
+  const sortDate = extractFirstDate(raw.applyPeriod) || extractFirstDate(raw.educationPeriod) || "";
 
   return {
     provider:             "neti",
@@ -105,6 +133,7 @@ function normalizeItem(raw) {
     tutorName:            "",
     schedule:             raw.educationPeriod || "",
     registrationDateTime: "",
+    sortDate,
     masterCourseId:       "",
     // neti 전용 확장 필드
     organization:         raw.organization || "",
