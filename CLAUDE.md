@@ -35,7 +35,7 @@ ice-planner-project/
 
 ---
 
-### course-next-api (Next.js 15 + React 19)
+### course-next-api (Next.js 15.5.15 + React 19)
 
 메인 애플리케이션.
 
@@ -83,10 +83,14 @@ npm run dev
 - app/page.js = 컨트롤러
 - UI는 반드시 components로 분리
 
-구성:
-- CourseCard — 카드 UI
-- CourseList — 리스트 렌더링
-- 필터 영역 — 별도 컴포넌트
+### components/ (course-next-api/components/)
+
+| 파일 | 역할 |
+|------|------|
+| `CourseCard.jsx` | 연수 카드 UI |
+| `CourseList.jsx` | 연수 목록 렌더링 |
+| `EventCard.jsx` | 이벤트 카드 UI |
+| `EventList.jsx` | 이벤트 목록 렌더링 |
 
 금지:
 - page.js에 UI 마크업 작성 금지
@@ -94,14 +98,46 @@ npm run dev
 
 ---
 
-## API Routes (Next.js)
+## 라이브러리 (course-next-api/lib/)
+
+| 파일 | 역할 |
+|------|------|
+| `cache.js` | 서버 공용 메모리 캐시 + In-Flight Lock |
+| `rate-limit.js` | IP 기반 인메모리 요청 제한 |
+| `teacherville-all-courses.js` | 티처빌 전체 목록 수집 |
+| `teacherville-ai-courses.js` | 티처빌 AI 연수 목록 수집 |
+| `teacherville-course-detail.js` | 티처빌 단건 상세 조회 |
+| `teacherville-recommend.js` | 티처빌 AI 추천 ID 수집 |
+| `teacherville-events.js` | 티처빌 이벤트 수집 |
+| `hstudy-courses.js` | 한국교원연수원 목록 수집 |
+| `hstudy-events.js` | 한국교원연수원 이벤트 수집 |
+| `neti-courses.js` | 중앙교육연수원 목록 수집 |
+| `ybm-events.js` | YBM 이벤트 수집 |
+
+---
+
+## API Routes (Next.js App Router — course-next-api/app/api/)
 
 - /api/all-courses
 - /api/ai-courses
 - /api/recommend-ids
-- /api/course/[id]
+- /api/course/[goodsCode]
 - /api/hstudy-courses
 - /api/neti-courses
+
+### 레거시 라우트 (pages/api/ — 건드리지 않음)
+
+- pages/api/hstudy-events.js
+- pages/api/teacherville-events.js
+- pages/api/ybm-events.js
+
+> App Router 마이그레이션 전 구버전. 삭제 전 확인 필요.
+
+### 백업 라우트 (app/api/ 내 비활성)
+
+- _hstudy-events_backup/
+- _teacherville-events_backup/
+- _ybm-events_backup/
 
 ---
 
@@ -209,9 +245,14 @@ ID 규칙:
 
 ---
 
-## 배포 주의사항
+## 배포
 
-- 서버 메모리 캐시 유지 안될 수 있음 (Vercel)
+- Vercel (서울 리전: icn1)
+- vercel.json: course-next-api/vercel.json에 리전 설정 있음
+
+### 주의사항
+
+- 서버 메모리 캐시 유지 안될 수 있음 (Vercel 서버리스)
 - 캐시 MISS 시 외부 요청 증가 가능
 
 ---
