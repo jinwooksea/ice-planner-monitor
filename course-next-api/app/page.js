@@ -11,271 +11,18 @@
 import { useState, useMemo, useCallback, useEffect, useRef } from "react";
 import CourseList from "@/components/CourseList";
 import EventList from "@/components/EventList";
+import CacheStatusPanel from "@/components/CacheStatusPanel";
+import DetailPanel from "@/components/DetailPanel";
+import {
+  PAGE_SIZE_UI,
+  PRICE_FILTERS,
+  PROVIDER_FILTERS,
+  SORT_TABS,
+} from "@/lib/filters";
+import { markNewCourses } from "@/lib/format";
 
 // ============================================================
-// 상수
-// ============================================================
-const PAGE_SIZE_UI = 50; // 초기 표시 개수 + "더보기" 단위
-
-const PRICE_FILTERS = [
-  { label: "전체",        test: () => true },
-  { label: "5만원 이하",  test: (p) => p <= 50_000 },
-  { label: "5–10만원",    test: (p) => p > 50_000 && p <= 100_000 },
-  { label: "10만원 초과", test: (p) => p > 100_000 },
-];
-
-// 패키지 / 일반연수 필터
-const TYPE_FILTERS = [
-  { label: "전체",     value: "" },
-  { label: "일반연수", value: "일반연수" },
-  { label: "패키지",   value: "패키지" },
-];
-
-// 제공기관 필터
-const PROVIDER_FILTERS = [
-  { label: "전체",          value: "" },
-  { label: "티처빌",        value: "teacherville" },
-  { label: "한국교원연수원", value: "hstudy" },
-  { label: "중앙교육연수원", value: "neti" },
-];
-
-// 정렬 탭
-const SORT_TABS = [
-  { key: "latest",    label: "최신순" },
-  { key: "popular",   label: "인기순" },
-  { key: "recommend", label: "추천순" },
-];
-
-// ============================================================
-// 유틸
-// ============================================================
-const fmt = (v) =>
-  !v && v !== 0 ? "-" : v === 0 ? "무료" : Number(v).toLocaleString("ko-KR") + "원";
-
-const orDash = (v) => v || "-";
-
-const fmtDate = (iso) =>
-  !iso
-    ? "-"
-    : new Date(iso).toLocaleString("ko-KR", {
-        month: "2-digit",
-        day: "2-digit",
-        hour: "2-digit",
-        minute: "2-digit",
-      });
-
-// ============================================================
-// NEW 상태 마킹 — registrationDateTime 기준 7일 이내 자동 처리
-// ============================================================
-function markNewCourses(rawCourses) {
-  const now = Date.now();
-
-  return rawCourses.map((c) => {
-    const baseDate = c.sortDate || c.registrationDateTime || "";
-    const dt = new Date(baseDate);
-    const valid = baseDate && !isNaN(dt.getTime());
-    if (!valid) return { ...c, isNew: false };
-    const diffDays = (now - dt.getTime()) / (1000 * 60 * 60 * 24);
-    return { ...c, isNew: diffDays >= 0 && diffDays <= 7 };
-  });
-}
-
-// ============================================================
-// 캐시 상태 패널
-// ============================================================
-function CacheStatusPanel({ meta }) {
-  if (!meta) return null;
-
-  return (
-    <div className="cache-panel">
-      <div className="cache-panel-row">
-        <span className={`cache-badge ${meta.cached ? "cached" : "fresh"}`}>
-          {meta.cached ? "캐시 사용 중" : "새로 조회"}
-        </span>
-        <span className="cache-panel-label">수집</span>
-        <strong>{meta.fetchedCount?.toLocaleString()}개</strong>
-        <span className="cache-panel-label">/ 외부요청</span>
-        <strong>{meta.externalRequestCount}회</strong>
-        {meta.inFlightUsed && (
-          <span className="inflight-badge">In-Flight 공유</span>
-        )}
-      </div>
-      <div className="cache-panel-times">
-        <span>마지막 갱신: {fmtDate(meta.lastFetchedAt)}</span>
-        <span className="cache-separator">|</span>
-        <span>다음 갱신 가능: {fmtDate(meta.nextRefreshAvailableAt)}</span>
-        <span className="cache-separator">|</span>
-        <span>캐시 유지: {meta.cacheTtlHours}시간</span>
-      </div>
-      {meta.note && <p className="cache-note">{meta.note}</p>}
-    </div>
-  );
-}
-
-// ============================================================
-// 상세 패널
-// ============================================================
-function DetailPanel({ detail, isLoading, error, onClose }) {
-  if (!detail && !isLoading && !error) return null;
-
-  return (
-    <aside className="detail-panel">
-      <button className="detail-close" onClick={onClose} title="닫기">✕</button>
-
-      {isLoading && <div className="detail-loading">상세 정보 불러오는 중...</div>}
-      {error && !isLoading && <div className="detail-error">⚠️ {error}</div>}
-
-      {detail && !isLoading && (
-        <>
-          {detail.provider === "neti" ? (
-            <>
-              <a
-                href={detail.detailUrl}
-                target="_blank"
-                rel="noopener noreferrer"
-                className="detail-external-link"
-              >
-                중앙교육연수원에서 보기 ↗
-              </a>
-
-              {detail.thumbnail && (
-                <img className="detail-thumb" src={detail.thumbnail} alt={detail.title} />
-              )}
-
-              <p className="detail-category">{orDash(detail.category)}</p>
-              <h2 className="detail-title">{detail.title}</h2>
-
-              <dl className="detail-meta">
-                {[
-                  ["기관명",     detail.organization],
-                  ["신청기간",   detail.applyPeriod],
-                  ["교육기간",   detail.educationPeriod],
-                  ["차시/인정",  detail.credit],
-                  ["교육대상",   detail.target],
-                  ["만족도",     detail.rating],
-                  ["신청수",     detail.applyCount ? String(detail.applyCount) : null],
-                ].filter(([, v]) => v).map(([label, value]) => (
-                  <div key={label} className="detail-meta-row">
-                    <dt>{label}</dt>
-                    <dd>{value}</dd>
-                  </div>
-                ))}
-              </dl>
-            </>
-          ) : (
-            <>
-              <a
-                href={`https://www.teacherville.co.kr${detail.detailUrl}`}
-                target="_blank"
-                rel="noopener noreferrer"
-                className="detail-external-link"
-              >
-                티처빌에서 보기 ↗
-              </a>
-
-              {detail.image && (
-                <img className="detail-thumb" src={detail.image} alt={detail.title} />
-              )}
-
-              <span className={`cache-badge ${detail.cached ? "cached" : "fresh"}`}>
-                {detail.cached ? "캐시" : "새로 조회"}
-                {detail.inFlightUsed && " (In-Flight 공유)"}
-              </span>
-
-              <p className="detail-category">{orDash(detail.largeCategory)}</p>
-              <h2 className="detail-title">{detail.title}</h2>
-
-              <dl className="detail-meta">
-                {[
-                  ["카테고리", detail.category],
-                  ["학점",     detail.credit],
-                  ["연수 유형", detail.type],
-                  ["가격",     fmt(detail.price)],
-                  ["강사",     detail.tutorName   || null],
-                  ["수강 대상", detail.target      || null],
-                  ["후기 수",  detail.reviewCount > 0 ? String(detail.reviewCount) : null],
-                  ["찜 수",    detail.wishCount   > 0 ? String(detail.wishCount)   : null],
-                ].filter(([, v]) => v !== null).map(([label, value]) => (
-                  <div key={label} className="detail-meta-row">
-                    <dt>{label}</dt>
-                    <dd className={label === "가격" ? "detail-price" : ""}>{orDash(value)}</dd>
-                  </div>
-                ))}
-              </dl>
-            </>
-          )}
-
-          {detail.schedules?.length > 0 && (
-            <section className="detail-section">
-              <h3 className="detail-section-title">운영 일정</h3>
-              <ul className="detail-schedule-list">
-                {detail.schedules.map((s, i) => (
-                  <li key={i} className={`detail-schedule-item${s.available ? " available" : ""}`}>
-                    <span className={`sched-badge ${s.available ? "open" : "closed"}`}>
-                      {s.available ? "신청 가능" : "마감"}
-                    </span>
-                    <strong>{s.name}</strong>
-                    <span className="sched-dates">
-                      연수: {s.schedule || "-"}<br />
-                      이수 기한: {s.completionDate || "-"}
-                    </span>
-                  </li>
-                ))}
-              </ul>
-            </section>
-          )}
-
-          {detail.lessons?.length > 0 && (
-            <section className="detail-section">
-              <h3 className="detail-section-title">
-                차시 목록 ({detail.lessons.length}차시)
-              </h3>
-              <ul className="detail-lesson-list">
-                {detail.lessons.map((l, i) => (
-                  <li key={i} className="detail-lesson-item">
-                    <span className="lesson-num">{l.order}차시</span>
-                    <span className="lesson-title">{l.title}</span>
-                    <span className="lesson-meta">
-                      {l.time ? `${l.time}분` : ""}
-                      {l.pageCount ? ` · ${l.pageCount}p` : ""}
-                    </span>
-                  </li>
-                ))}
-              </ul>
-            </section>
-          )}
-
-          {detail.reviews?.length > 0 && (
-            <section className="detail-section">
-              <h3 className="detail-section-title">수강 후기</h3>
-              <ul className="detail-review-list">
-                {detail.reviews.map((r, i) => (
-                  <li key={i} className="detail-review-item">
-                    <p className="review-title">{r.title}</p>
-                    <p className="review-body">{r.body}</p>
-                    <p className="review-footer">{r.writer} · {r.date}</p>
-                  </li>
-                ))}
-              </ul>
-            </section>
-          )}
-
-          <section className="detail-section">
-            <details>
-              <summary className="raw-summary">원본 JSON</summary>
-              <pre className="raw-json">{JSON.stringify(detail, null, 2)}</pre>
-            </details>
-          </section>
-        </>
-      )}
-    </aside>
-  );
-}
-
-// ============================================================
-// 강의 카드
-// ============================================================
-// 메인 페이지
+// 메인 페이지 — 컨트롤러
 // ============================================================
 export default function Page() {
   // ── 목록 상태 ────────────────────────────────────────────
@@ -645,6 +392,17 @@ export default function Page() {
   };
 
 
+  // ── 필터 초기화 (재사용용) ───────────────────────────────
+  const handleResetFilters = useCallback(() => {
+    setSearchText("");
+    setFilterCategory("");
+    setFilterCredit("");
+    setFilterPriceIdx(0);
+    setFilterType("");
+    setFilterProvider("");
+    setVisibleCount(PAGE_SIZE_UI);
+  }, []);
+
   // ── 필터 옵션 (외부 요청 없음) ───────────────────────────
   const creditOptions = useMemo(() => {
     const s = new Set(courses.map((c) => c.credit).filter(Boolean));
@@ -958,12 +716,7 @@ export default function Page() {
                   {(searchText || filterCategory || filterCredit || filterPriceIdx > 0 || filterProvider) && (
                     <button
                       className="btn-reset"
-                      onClick={() => {
-                        setSearchText(""); setFilterCategory("");
-                        setFilterCredit(""); setFilterPriceIdx(0);
-                        setFilterType(""); setFilterProvider("");
-                        setVisibleCount(PAGE_SIZE_UI);
-                      }}
+                      onClick={handleResetFilters}
                     >
                       초기화
                     </button>
@@ -982,6 +735,8 @@ export default function Page() {
             hasMore={hasMore}
             visibleCount={visibleCount}
             onLoadMore={() => setVisibleCount((n) => n + PAGE_SIZE_UI)}
+            isLoading={listLoading || hstudyLoading || netiLoading}
+            onResetFilters={handleResetFilters}
           />
 
           {/* ── 원본 JSON ── */}
