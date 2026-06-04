@@ -89,8 +89,13 @@ npm run dev
 |------|------|
 | `CourseCard.jsx` | 연수 카드 UI · 제목 검색어 하이라이트(`query` prop, `.card-title-hl`) |
 | `CourseList.jsx` | 연수 목록 렌더링 · `query`를 CourseCard에 전달 |
+| `CourseCardSkeleton.jsx` | 연수 카드 로딩 스켈레톤 |
 | `EventCard.jsx` | 이벤트 카드 UI |
 | `EventList.jsx` | 이벤트 목록 렌더링 |
+| `EventCardSkeleton.jsx` | 이벤트 카드 로딩 스켈레톤 |
+| `DetailPanel.jsx` | 우측 연수 상세 패널 |
+| `EmptyResult.jsx` | 검색·필터 0건 빈 상태 UI |
+| `CacheStatusPanel.jsx` | 캐시 상태(meta) 표시 패널 |
 
 금지:
 - page.js에 UI 마크업 작성 금지
@@ -104,6 +109,8 @@ npm run dev
 |------|------|
 | `cache.js` | 서버 공용 메모리 캐시 + In-Flight Lock |
 | `rate-limit.js` | IP 기반 인메모리 요청 제한 |
+| `filters.js` | 검색·가격·유형·provider 필터 / 정렬 탭 / 페이지 크기 상수 |
+| `format.js` | 가격·날짜 포맷, NEW 표시(`markNewCourses`) 헬퍼 |
 | `teacherville-all-courses.js` | 티처빌 전체 목록 수집 |
 | `teacherville-ai-courses.js` | 티처빌 AI 연수 목록 수집 |
 | `teacherville-course-detail.js` | 티처빌 단건 상세 조회 |
