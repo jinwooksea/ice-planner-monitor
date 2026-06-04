@@ -32,7 +32,12 @@ function handleClick(course, onClick) {
   onClick();
 }
 
-export default function CourseCard({ course, isActive, onClick, query }) {
+export default function CourseCard({ course, isActive, onClick, query, isFavorite, onToggleFavorite }) {
+  const handleFavClick = (e) => {
+    e.stopPropagation();
+    onToggleFavorite?.(course.id);
+  };
+
   return (
     <li
       className={`course-card${isActive ? " is-active" : ""}`}
@@ -42,6 +47,16 @@ export default function CourseCard({ course, isActive, onClick, query }) {
       onKeyDown={(e) => e.key === "Enter" && handleClick(course, onClick)}
     >
       <div className="card-thumb-wrap">
+        <button
+          type="button"
+          className={`fav-btn${isFavorite ? " is-active" : ""}`}
+          aria-label={isFavorite ? "즐겨찾기 해제" : "즐겨찾기 추가"}
+          aria-pressed={isFavorite}
+          onClick={handleFavClick}
+          onKeyDown={(e) => e.stopPropagation()}
+        >
+          {isFavorite ? "★" : "☆"}
+        </button>
         {course.thumbnail ? (
           <img
             className="card-thumb"

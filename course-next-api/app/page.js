@@ -47,6 +47,10 @@ export default function Page() {
   const [filterProvider, setFilterProvider] = useState(""); // "" | "teacherville" | "hstudy"
   const [sortKey, setSortKey]               = useState("latest"); // latest | popular | recommend
 
+  // ── 즐겨찾기 (localStorage 영속, 강의+이벤트 공용) ──────
+  const [favoriteIds, setFavoriteIds]             = useState(() => new Set());
+  const [showFavoritesOnly, setShowFavoritesOnly] = useState(false);
+
   // ── 추천 ID (추천순 정렬 + 배지용) ──────────────────────
   const [recommendIds, setRecommendIds] = useState(new Set());
 
@@ -93,7 +97,6 @@ export default function Page() {
       }
       const data = await coursesResult.value.json();
       const rawCourses = data.courses ?? [];
-      localStorage.setItem("prevCourses", JSON.stringify(rawCourses));
       setCourses(markNewCourses(rawCourses));
       setMeta(data.meta ?? null);
       setRawJson(data);
@@ -133,7 +136,6 @@ export default function Page() {
         const incoming = (data.courses ?? []).filter((c) => !existingIds.has(c.id));
         const marked = markNewCourses(incoming);
         const merged = [...prev, ...marked];
-        localStorage.setItem("prevCourses", JSON.stringify(merged));
         return merged;
       });
       setHstudyMeta(data.meta ?? null);
@@ -163,7 +165,6 @@ export default function Page() {
         const incoming = (data.courses ?? []).filter((c) => !existingIds.has(c.id));
         const marked = markNewCourses(incoming);
         const merged = [...prev, ...marked];
-        localStorage.setItem("prevCourses", JSON.stringify(merged));
         return merged;
       });
       setNetiMeta(data.meta ?? null);
@@ -324,7 +325,6 @@ export default function Page() {
       [...(hstudyData || []), ...(netiData || [])].forEach((c) => {
         if (!mergedIds.has(c.id)) { rawMerged.push(c); mergedIds.add(c.id); }
       });
-      localStorage.setItem("prevCourses", JSON.stringify(rawMerged));
       const marked = markNewCourses(rawMerged);
       setCourses(marked);
     } finally {
@@ -342,6 +342,26 @@ export default function Page() {
     didAutoLoadRef.current = true;
     handleLoadAll();
   // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+
+  // ── 즐겨찾기 로드 (최초 1회) ────────────────────────────
+  useEffect(() => {
+    try {
+      const saved = JSON.parse(localStorage.getItem("iceFavorites") || "[]");
+      if (Array.isArray(saved)) setFavoriteIds(new Set(saved.map(String)));
+    } catch {}
+  }, []);
+
+  // ── 즐겨찾기 토글 (상태 + localStorage 동시 갱신) ───────
+  const toggleFavorite = useCallback((id) => {
+    setFavoriteIds((prev) => {
+      const next = new Set(prev);
+      const key = String(id);
+      if (next.has(key)) next.delete(key);
+      else next.add(key);
+      try { localStorage.setItem("iceFavorites", JSON.stringify([...next])); } catch {}
+      return next;
+    });
   }, []);
 
   // ── 카드 클릭 → 단건 상세 (반복 호출 없음) ──────────────
@@ -400,6 +420,7 @@ export default function Page() {
     setFilterPriceIdx(0);
     setFilterType("");
     setFilterProvider("");
+    setShowFavoritesOnly(false);
     setVisibleCount(PAGE_SIZE_UI);
   }, []);
 
@@ -434,6 +455,7 @@ export default function Page() {
       (!filterCategory      || c.category     === filterCategory)      &&
       (!filterType          || c.trainingType === filterType)          &&
       (!effectiveProvider   || c.provider     === effectiveProvider)   &&
+      (!showFavoritesOnly   || favoriteIds.has(String(c.id)))          &&
       priceTest(c.price)
     );
 
@@ -471,7 +493,7 @@ export default function Page() {
       if (!aTime && bTime) return 1;
       return 0;
     });
-  }, [courses, searchText, filterCredit, filterCategory, filterPriceIdx, filterType, filterProvider, sortKey, recommendIds]);
+  }, [courses, searchText, filterCredit, filterCategory, filterPriceIdx, filterType, filterProvider, showFavoritesOnly, favoriteIds, sortKey, recommendIds]);
 
   // ── 더보기로 슬라이스 ────────────────────────────────────
   const visibleCourses = useMemo(
@@ -480,6 +502,12 @@ export default function Page() {
   );
 
   const hasMore = visibleCount < processedCourses.length;
+
+  // ── 이벤트 즐겨찾기 필터 ────────────────────────────────
+  const visibleEvents = useMemo(
+    () => (showFavoritesOnly ? events.filter((e) => favoriteIds.has(String(e.id))) : events),
+    [events, showFavoritesOnly, favoriteIds]
+  );
 
   const isPanelOpen = activeId !== null || detailLoading;
 
@@ -634,11 +662,26 @@ export default function Page() {
           </div>
 
           {activeTab === "event" && (
-            <EventList
-              events={events}
-              loading={eventsLoading}
-              error={eventsError}
-            />
+            <>
+              {events.length > 0 && (
+                <div className="favorites-bar">
+                  <button
+                    type="button"
+                    className={`btn-fav-toggle${showFavoritesOnly ? " active" : ""}`}
+                    onClick={() => setShowFavoritesOnly((v) => !v)}
+                  >
+                    ★ 즐겨찾기만
+                  </button>
+                </div>
+              )}
+              <EventList
+                events={visibleEvents}
+                loading={eventsLoading}
+                error={eventsError}
+                favoriteIds={favoriteIds}
+                onToggleFavorite={toggleFavorite}
+              />
+            </>
           )}
 
           {activeTab === "course" && (
@@ -713,7 +756,15 @@ export default function Page() {
                     ))}
                   </select>
 
-                  {(searchText || filterCategory || filterCredit || filterPriceIdx > 0 || filterProvider) && (
+                  <button
+                    type="button"
+                    className={`btn-fav-toggle${showFavoritesOnly ? " active" : ""}`}
+                    onClick={() => { setShowFavoritesOnly((v) => !v); setVisibleCount(PAGE_SIZE_UI); }}
+                  >
+                    ★ 즐겨찾기만
+                  </button>
+
+                  {(searchText || filterCategory || filterCredit || filterPriceIdx > 0 || filterProvider || showFavoritesOnly) && (
                     <button
                       className="btn-reset"
                       onClick={handleResetFilters}
@@ -738,6 +789,8 @@ export default function Page() {
             isLoading={listLoading || hstudyLoading || netiLoading}
             onResetFilters={handleResetFilters}
             query={searchText}
+            favoriteIds={favoriteIds}
+            onToggleFavorite={toggleFavorite}
           />
 
           {/* ── 원본 JSON ── */}

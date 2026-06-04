@@ -12,11 +12,16 @@ const STATE_STYLE = {
   종료:   { bg: "#f3f4f6", color: "#9ca3af" },
 };
 
-export default function EventCard({ event }) {
+export default function EventCard({ event, isFavorite, onToggleFavorite }) {
   const style = STATE_STYLE[event.status] ?? STATE_STYLE["종료"];
 
   function handleClick() {
     if (event.detailUrl) window.open(event.detailUrl, "_blank", "noopener,noreferrer");
+  }
+
+  function handleFavClick(e) {
+    e.stopPropagation();
+    onToggleFavorite?.(event.id);
   }
 
   return (
@@ -28,6 +33,16 @@ export default function EventCard({ event }) {
       onKeyDown={(e) => e.key === "Enter" && handleClick()}
     >
       <div className="event-thumb-wrap">
+        <button
+          type="button"
+          className={`fav-btn${isFavorite ? " is-active" : ""}`}
+          aria-label={isFavorite ? "즐겨찾기 해제" : "즐겨찾기 추가"}
+          aria-pressed={isFavorite}
+          onClick={handleFavClick}
+          onKeyDown={(e) => e.stopPropagation()}
+        >
+          {isFavorite ? "★" : "☆"}
+        </button>
         {event.thumbnail ? (
           <img
             className="event-thumb"

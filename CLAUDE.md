@@ -87,11 +87,11 @@ npm run dev
 
 | 파일 | 역할 |
 |------|------|
-| `CourseCard.jsx` | 연수 카드 UI · 제목 검색어 하이라이트(`query` prop, `.card-title-hl`) |
-| `CourseList.jsx` | 연수 목록 렌더링 · `query`를 CourseCard에 전달 |
+| `CourseCard.jsx` | 연수 카드 UI · 제목 검색어 하이라이트(`query`, `.card-title-hl`) · 즐겨찾기 별표(`fav-btn`) |
+| `CourseList.jsx` | 연수 목록 렌더링 · `query`·`favoriteIds`·`onToggleFavorite` 전달 |
 | `CourseCardSkeleton.jsx` | 연수 카드 로딩 스켈레톤 |
-| `EventCard.jsx` | 이벤트 카드 UI |
-| `EventList.jsx` | 이벤트 목록 렌더링 |
+| `EventCard.jsx` | 이벤트 카드 UI · 즐겨찾기 별표(`fav-btn`) |
+| `EventList.jsx` | 이벤트 목록 렌더링 · `favoriteIds`·`onToggleFavorite` 전달 |
 | `EventCardSkeleton.jsx` | 이벤트 카드 로딩 스켈레톤 |
 | `DetailPanel.jsx` | 우측 연수 상세 패널 |
 | `EmptyResult.jsx` | 검색·필터 0건 빈 상태 UI |
@@ -229,6 +229,7 @@ URL 규칙:
 - 검색 / 필터 / 정렬 → 클라이언트
 - API 재호출 금지
 - useMemo 유지
+- 즐겨찾기: `localStorage` 키 `iceFavorites`(ID 배열), 강의·이벤트 공용. 토글 시 상태+localStorage 동시 갱신
 
 ---
 

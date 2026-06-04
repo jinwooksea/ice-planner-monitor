@@ -16,6 +16,8 @@ export default function CourseList({
 	isLoading,
 	onResetFilters,
 	query,
+	favoriteIds,
+	onToggleFavorite,
 }) {
 	// ── 초기 로딩: 카드가 한 번도 안 채워졌을 때 스켈레톤 ──
 	if (isLoading && courses.length === 0) {
@@ -41,6 +43,8 @@ export default function CourseList({
 											isActive={activeId === course.id}
 											onClick={() => onCardClick(course)}
 											query={query}
+											isFavorite={favoriteIds?.has(String(course.id))}
+											onToggleFavorite={onToggleFavorite}
 										/>
 									))}
 								</ul>
@@ -55,6 +59,8 @@ export default function CourseList({
 									isActive={activeId === course.id}
 									onClick={() => onCardClick(course)}
 									query={query}
+									isFavorite={favoriteIds?.has(String(course.id))}
+									onToggleFavorite={onToggleFavorite}
 								/>
 							))}
 						</ul>

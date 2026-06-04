@@ -4,7 +4,7 @@ import EventCard from "@/components/EventCard";
 import { EventCardSkeletonGrid } from "@/components/EventCardSkeleton";
 import EmptyResult from "@/components/EmptyResult";
 
-export default function EventList({ events, loading, error }) {
+export default function EventList({ events, loading, error, favoriteIds, onToggleFavorite }) {
 	// ── 초기 로딩: 스켈레톤 ──
 	if (loading && (!events || events.length === 0)) {
 		return <EventCardSkeletonGrid count={8} />;
@@ -27,7 +27,12 @@ export default function EventList({ events, loading, error }) {
 	return (
 		<ul className="event-grid">
 			{events.map((event) => (
-				<EventCard key={event.id} event={event} />
+				<EventCard
+					key={event.id}
+					event={event}
+					isFavorite={favoriteIds?.has(String(event.id))}
+					onToggleFavorite={onToggleFavorite}
+				/>
 			))}
 		</ul>
 	);
