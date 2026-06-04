@@ -859,6 +859,11 @@ code {
   margin-top: 2px;
 }
 
+/* 검색어 하이라이트 — 제목이 이미 bold라 컬러로 매칭 부분 구분 */
+.card-title-hl {
+  color: #5b6af0;
+}
+
 .card-tutor {
   font-size: 12px;
   color: var(--text-secondary);

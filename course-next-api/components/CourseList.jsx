@@ -15,6 +15,7 @@ export default function CourseList({
 	onLoadMore,
 	isLoading,
 	onResetFilters,
+	query,
 }) {
 	// ── 초기 로딩: 카드가 한 번도 안 채워졌을 때 스켈레톤 ──
 	if (isLoading && courses.length === 0) {
@@ -39,6 +40,7 @@ export default function CourseList({
 											course={course}
 											isActive={activeId === course.id}
 											onClick={() => onCardClick(course)}
+											query={query}
 										/>
 									))}
 								</ul>
@@ -52,6 +54,7 @@ export default function CourseList({
 									course={course}
 									isActive={activeId === course.id}
 									onClick={() => onCardClick(course)}
+									query={query}
 								/>
 							))}
 						</ul>

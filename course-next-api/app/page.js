@@ -737,6 +737,7 @@ export default function Page() {
             onLoadMore={() => setVisibleCount((n) => n + PAGE_SIZE_UI)}
             isLoading={listLoading || hstudyLoading || netiLoading}
             onResetFilters={handleResetFilters}
+            query={searchText}
           />
 
           {/* ── 원본 JSON ── */}

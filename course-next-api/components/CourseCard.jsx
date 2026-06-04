@@ -5,6 +5,19 @@ const fmt = (v) =>
 
 const orDash = (v) => v || "-";
 
+// 검색어와 일치하는 부분을 컬러 span으로 감싼다 (대소문자 무시)
+function highlight(text, query) {
+  const q = query?.trim();
+  if (!q) return text;
+  const escaped = q.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
+  const parts = text.split(new RegExp(`(${escaped})`, "gi"));
+  return parts.map((part, i) =>
+    part.toLowerCase() === q.toLowerCase()
+      ? <span key={i} className="card-title-hl">{part}</span>
+      : part
+  );
+}
+
 const PROVIDER_LABELS = {
   teacherville: "티처빌",
   hstudy:       "한국교원연수원",
@@ -19,7 +32,7 @@ function handleClick(course, onClick) {
   onClick();
 }
 
-export default function CourseCard({ course, isActive, onClick }) {
+export default function CourseCard({ course, isActive, onClick, query }) {
   return (
     <li
       className={`course-card${isActive ? " is-active" : ""}`}
@@ -61,7 +74,7 @@ export default function CourseCard({ course, isActive, onClick }) {
 
       <div className="card-body">
         <p className="card-category">{orDash(course.category)}</p>
-        <h3 className="card-title">{course.title}</h3>
+        <h3 className="card-title">{highlight(course.title, query)}</h3>
         {course.tutorName && <p className="card-tutor">{course.tutorName}</p>}
 
         <dl className="card-info">

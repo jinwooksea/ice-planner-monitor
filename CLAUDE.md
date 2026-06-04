@@ -87,8 +87,8 @@ npm run dev
 
 | 파일 | 역할 |
 |------|------|
-| `CourseCard.jsx` | 연수 카드 UI |
-| `CourseList.jsx` | 연수 목록 렌더링 |
+| `CourseCard.jsx` | 연수 카드 UI · 제목 검색어 하이라이트(`query` prop, `.card-title-hl`) |
+| `CourseList.jsx` | 연수 목록 렌더링 · `query`를 CourseCard에 전달 |
 | `EventCard.jsx` | 이벤트 카드 UI |
 | `EventList.jsx` | 이벤트 목록 렌더링 |
 
