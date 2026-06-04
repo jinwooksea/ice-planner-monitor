@@ -388,7 +388,10 @@ export default function Page() {
     if (sort === "popular" || sort === "recommend") setSortKey(sort);
     if (category) setFilterCategory(category);
     if (credit)   setFilterCredit(credit);
-    if (price && !Number.isNaN(Number(price))) setFilterPriceIdx(Number(price));
+    const priceIdx = Number(price);
+    if (price && Number.isInteger(priceIdx) && priceIdx >= 0 && priceIdx < PRICE_FILTERS.length) {
+      setFilterPriceIdx(priceIdx);
+    }
     if (type)     setFilterType(type);
     if (tab === "event") setActiveTab("event");
     if (fav === "1")     setShowFavoritesOnly(true);
