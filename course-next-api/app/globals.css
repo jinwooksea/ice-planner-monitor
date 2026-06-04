@@ -115,6 +115,20 @@ code {
 .provider-summary-card--neti         { border-top-color: #0ea5e9; }
 .provider-summary-card--ybm          { border-top-color: #f59e0b; }
 
+/* provider 카드 = 연수 필터 (클릭 가능 / 활성) */
+.provider-summary-card.is-clickable {
+  cursor: pointer;
+  transition: box-shadow 0.15s, transform 0.1s, border-color 0.15s;
+}
+.provider-summary-card.is-clickable:hover {
+  box-shadow: 0 4px 14px rgba(0, 0, 0, 0.08);
+  transform: translateY(-1px);
+}
+.provider-summary-card.is-active-filter {
+  border-color: var(--accent);
+  box-shadow: 0 0 0 2px var(--accent) inset;
+}
+
 .provider-summary-title {
   font-size: 11px;
   font-weight: 700;
@@ -599,6 +613,13 @@ code {
   padding: 3px 10px;
   border-radius: 999px;
   border: 1px solid #fed7aa;
+}
+
+/* 마감 임박(3일 이내·오늘 마감) 강조 */
+.event-dday.is-urgent {
+  color: #fff;
+  background: #ef4444;
+  border-color: #ef4444;
 }
 
 .event-title {

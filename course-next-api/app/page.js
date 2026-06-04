@@ -364,6 +364,54 @@ export default function Page() {
     });
   }, []);
 
+  // ── provider 카드 클릭 → 해당 연수만 필터 (토글) ────────
+  const handleProviderCardClick = useCallback((key) => {
+    setActiveTab("course");
+    setFilterProvider((prev) => (prev === key ? "" : key));
+    setVisibleCount(PAGE_SIZE_UI);
+  }, []);
+
+  // ── URL 쿼리 → 상태 복원 (최초 1회) ────────────────────
+  useEffect(() => {
+    const p = new URLSearchParams(window.location.search);
+    const q        = p.get("q");
+    const provider = p.get("provider");
+    const sort     = p.get("sort");
+    const category = p.get("category");
+    const credit   = p.get("credit");
+    const price    = p.get("price");
+    const type     = p.get("type");
+    const tab      = p.get("tab");
+    const fav      = p.get("fav");
+    if (q)        setSearchText(q);
+    if (provider) setFilterProvider(provider);
+    if (sort === "popular" || sort === "recommend") setSortKey(sort);
+    if (category) setFilterCategory(category);
+    if (credit)   setFilterCredit(credit);
+    if (price && !Number.isNaN(Number(price))) setFilterPriceIdx(Number(price));
+    if (type)     setFilterType(type);
+    if (tab === "event") setActiveTab("event");
+    if (fav === "1")     setShowFavoritesOnly(true);
+  }, []);
+
+  // ── 상태 → URL 쿼리 동기화 (마운트 첫 실행은 건너뜀) ────
+  const urlSyncReady = useRef(false);
+  useEffect(() => {
+    if (!urlSyncReady.current) { urlSyncReady.current = true; return; }
+    const p = new URLSearchParams();
+    if (searchText)             p.set("q", searchText);
+    if (filterProvider)         p.set("provider", filterProvider);
+    if (sortKey !== "latest")   p.set("sort", sortKey);
+    if (filterCategory)         p.set("category", filterCategory);
+    if (filterCredit)           p.set("credit", filterCredit);
+    if (filterPriceIdx)         p.set("price", String(filterPriceIdx));
+    if (filterType)             p.set("type", filterType);
+    if (activeTab !== "course") p.set("tab", activeTab);
+    if (showFavoritesOnly)      p.set("fav", "1");
+    const qs = p.toString();
+    window.history.replaceState(null, "", qs ? `?${qs}` : window.location.pathname);
+  }, [searchText, filterProvider, sortKey, filterCategory, filterCredit, filterPriceIdx, filterType, activeTab, showFavoritesOnly]);
+
   // ── 카드 클릭 → 단건 상세 (반복 호출 없음) ──────────────
   const handleCardClick = useCallback(async (course) => {
     if (detailLoading) return;
@@ -584,7 +632,15 @@ export default function Page() {
             return (
               <>
                 {PROVIDERS.map(({ key, label, course, event }) => (
-                  <div key={key} className={`provider-summary-card provider-summary-card--${key}`}>
+                  <div
+                    key={key}
+                    className={`provider-summary-card provider-summary-card--${key}${course.supported ? " is-clickable" : ""}${filterProvider === key ? " is-active-filter" : ""}`}
+                    onClick={course.supported ? () => handleProviderCardClick(key) : undefined}
+                    role={course.supported ? "button" : undefined}
+                    tabIndex={course.supported ? 0 : undefined}
+                    onKeyDown={course.supported ? (e) => e.key === "Enter" && handleProviderCardClick(key) : undefined}
+                    title={course.supported ? `${label} 연수만 보기` : undefined}
+                  >
                     <p className="provider-summary-title">{label}</p>
                     <ul className="provider-summary-list">
                       <li className={`provider-summary-item ${course.supported ? "is-supported" : "is-disabled"}`}>

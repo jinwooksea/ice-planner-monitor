@@ -90,7 +90,7 @@ npm run dev
 | `CourseCard.jsx` | 연수 카드 UI · 제목 검색어 하이라이트(`query`, `.card-title-hl`) · 즐겨찾기 별표(`fav-btn`) |
 | `CourseList.jsx` | 연수 목록 렌더링 · `query`·`favoriteIds`·`onToggleFavorite` 전달 |
 | `CourseCardSkeleton.jsx` | 연수 카드 로딩 스켈레톤 |
-| `EventCard.jsx` | 이벤트 카드 UI · 즐겨찾기 별표(`fav-btn`) |
+| `EventCard.jsx` | 이벤트 카드 UI · 즐겨찾기 별표(`fav-btn`) · 마감 배지("오늘 마감"/D-N, 3일 이내 `is-urgent`) |
 | `EventList.jsx` | 이벤트 목록 렌더링 · `favoriteIds`·`onToggleFavorite` 전달 |
 | `EventCardSkeleton.jsx` | 이벤트 카드 로딩 스켈레톤 |
 | `DetailPanel.jsx` | 우측 연수 상세 패널 |
@@ -230,6 +230,8 @@ URL 규칙:
 - API 재호출 금지
 - useMemo 유지
 - 즐겨찾기: `localStorage` 키 `iceFavorites`(ID 배열), 강의·이벤트 공용. 토글 시 상태+localStorage 동시 갱신
+- URL 동기화: 최초 1회 `URLSearchParams` 복원 + 상태 변경 시 `window.history.replaceState`. 키 `q·provider·sort·category·credit·price·type·tab·fav` (App Router Suspense 회피 위해 `useSearchParams` 미사용)
+- provider 헤더 카드 클릭 = 연수 provider 필터(토글, 연수 지원 카드만)
 
 ---
 

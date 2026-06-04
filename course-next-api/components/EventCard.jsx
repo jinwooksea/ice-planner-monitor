@@ -70,10 +70,12 @@ export default function EventCard({ event, isFavorite, onToggleFavorite }) {
             {event.status || "-"}
           </span>
           {event.status === "진행중" && event.dday === 0 && (
-            <span className="event-dday">D-day</span>
+            <span className="event-dday is-urgent">오늘 마감</span>
           )}
           {event.status === "진행중" && event.dday > 0 && (
-            <span className="event-dday">D-{event.dday}</span>
+            <span className={`event-dday${event.dday <= 3 ? " is-urgent" : ""}`}>
+              D-{event.dday}
+            </span>
           )}
         </div>
 
