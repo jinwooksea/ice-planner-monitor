@@ -44,8 +44,12 @@ export default function Page() {
   const [filterCategory, setFilterCategory] = useState("");
   const [filterPriceIdx, setFilterPriceIdx] = useState(0);
   const [filterType, setFilterType]         = useState(""); // "" | "일반연수" | "패키지"
-  const [filterProvider, setFilterProvider] = useState(""); // "" | "teacherville" | "hstudy"
+  const [filterProviders, setFilterProviders] = useState(() => new Set()); // 다중 선택, 빈 Set=전체
   const [sortKey, setSortKey]               = useState("latest"); // latest | popular | recommend
+
+  // ── 최근 검색어 (localStorage 영속) ───────────────────────
+  const [recentSearches, setRecentSearches] = useState([]);
+  const [searchFocused, setSearchFocused]   = useState(false);
 
   // ── 즐겨찾기 (localStorage 영속, 강의+이벤트 공용) ──────
   const [favoriteIds, setFavoriteIds]             = useState(() => new Set());
@@ -352,6 +356,30 @@ export default function Page() {
     } catch {}
   }, []);
 
+  // ── 최근 검색어 로드 (최초 1회) ─────────────────────────
+  useEffect(() => {
+    try {
+      const saved = JSON.parse(localStorage.getItem("iceRecentSearches") || "[]");
+      if (Array.isArray(saved)) setRecentSearches(saved.filter((s) => typeof s === "string"));
+    } catch {}
+  }, []);
+
+  // ── 최근 검색어 저장 (중복 제거, 최신 8개) ──────────────
+  const commitRecentSearch = useCallback((term) => {
+    const t = (term ?? "").trim();
+    if (!t) return;
+    setRecentSearches((prev) => {
+      const next = [t, ...prev.filter((s) => s !== t)].slice(0, 8);
+      try { localStorage.setItem("iceRecentSearches", JSON.stringify(next)); } catch {}
+      return next;
+    });
+  }, []);
+
+  const clearRecentSearches = useCallback(() => {
+    setRecentSearches([]);
+    try { localStorage.removeItem("iceRecentSearches"); } catch {}
+  }, []);
+
   // ── 즐겨찾기 토글 (상태 + localStorage 동시 갱신) ───────
   const toggleFavorite = useCallback((id) => {
     setFavoriteIds((prev) => {
@@ -364,12 +392,23 @@ export default function Page() {
     });
   }, []);
 
-  // ── provider 카드 클릭 → 해당 연수만 필터 (토글) ────────
-  const handleProviderCardClick = useCallback((key) => {
-    setActiveTab("course");
-    setFilterProvider((prev) => (prev === key ? "" : key));
+  // ── provider 다중 토글 (key "" = 전체 해제) ─────────────
+  const toggleProvider = useCallback((key) => {
+    setFilterProviders((prev) => {
+      if (!key) return new Set();           // "전체" → 모두 해제
+      const next = new Set(prev);
+      if (next.has(key)) next.delete(key);
+      else next.add(key);
+      return next;
+    });
     setVisibleCount(PAGE_SIZE_UI);
   }, []);
+
+  // ── provider 카드 클릭 → 연수 탭 전환 + 토글 ────────────
+  const handleProviderCardClick = useCallback((key) => {
+    setActiveTab("course");
+    toggleProvider(key);
+  }, [toggleProvider]);
 
   // ── URL 쿼리 → 상태 복원 (최초 1회) ────────────────────
   useEffect(() => {
@@ -384,7 +423,7 @@ export default function Page() {
     const tab      = p.get("tab");
     const fav      = p.get("fav");
     if (q)        setSearchText(q);
-    if (provider) setFilterProvider(provider);
+    if (provider) setFilterProviders(new Set(provider.split(",").filter(Boolean)));
     if (sort === "popular" || sort === "recommend") setSortKey(sort);
     if (category) setFilterCategory(category);
     if (credit)   setFilterCredit(credit);
@@ -403,7 +442,7 @@ export default function Page() {
     if (!urlSyncReady.current) { urlSyncReady.current = true; return; }
     const p = new URLSearchParams();
     if (searchText)             p.set("q", searchText);
-    if (filterProvider)         p.set("provider", filterProvider);
+    if (filterProviders.size)   p.set("provider", [...filterProviders].join(","));
     if (sortKey !== "latest")   p.set("sort", sortKey);
     if (filterCategory)         p.set("category", filterCategory);
     if (filterCredit)           p.set("credit", filterCredit);
@@ -413,7 +452,7 @@ export default function Page() {
     if (showFavoritesOnly)      p.set("fav", "1");
     const qs = p.toString();
     window.history.replaceState(null, "", qs ? `?${qs}` : window.location.pathname);
-  }, [searchText, filterProvider, sortKey, filterCategory, filterCredit, filterPriceIdx, filterType, activeTab, showFavoritesOnly]);
+  }, [searchText, filterProviders, sortKey, filterCategory, filterCredit, filterPriceIdx, filterType, activeTab, showFavoritesOnly]);
 
   // ── 카드 클릭 → 단건 상세 (반복 호출 없음) ──────────────
   const handleCardClick = useCallback(async (course) => {
@@ -470,7 +509,7 @@ export default function Page() {
     setFilterCredit("");
     setFilterPriceIdx(0);
     setFilterType("");
-    setFilterProvider("");
+    setFilterProviders(new Set());
     setShowFavoritesOnly(false);
     setVisibleCount(PAGE_SIZE_UI);
   }, []);
@@ -491,21 +530,24 @@ export default function Page() {
     const q = searchText.toLowerCase();
     const priceTest = PRICE_FILTERS[filterPriceIdx].test;
 
-    // 1. 검색
+    // 1. 검색 (제목·강사·카테고리 멀티필드)
     const searched = courses.filter((c) =>
-      !searchText || c.title.toLowerCase().includes(q)
+      !searchText ||
+      c.title?.toLowerCase().includes(q) ||
+      c.tutorName?.toLowerCase().includes(q) ||
+      c.category?.toLowerCase().includes(q)
     );
 
     // 2. 필터
     // 패키지 선택 시 티처빌(teacherville)만 표시 — hstudy/neti는 패키지 없음
-    const effectiveProvider =
-      filterType === "패키지" ? "teacherville" : filterProvider;
+    const providerSet =
+      filterType === "패키지" ? new Set(["teacherville"]) : filterProviders;
 
     const filtered = searched.filter((c) =>
       (!filterCredit        || c.credit       === filterCredit)        &&
       (!filterCategory      || c.category     === filterCategory)      &&
       (!filterType          || c.trainingType === filterType)          &&
-      (!effectiveProvider   || c.provider     === effectiveProvider)   &&
+      (providerSet.size === 0 || providerSet.has(c.provider))          &&
       (!showFavoritesOnly   || favoriteIds.has(String(c.id)))          &&
       priceTest(c.price)
     );
@@ -544,7 +586,7 @@ export default function Page() {
       if (!aTime && bTime) return 1;
       return 0;
     });
-  }, [courses, searchText, filterCredit, filterCategory, filterPriceIdx, filterType, filterProvider, showFavoritesOnly, favoriteIds, sortKey, recommendIds]);
+  }, [courses, searchText, filterCredit, filterCategory, filterPriceIdx, filterType, filterProviders, showFavoritesOnly, favoriteIds, sortKey, recommendIds]);
 
   // ── 더보기로 슬라이스 ────────────────────────────────────
   const visibleCourses = useMemo(
@@ -637,7 +679,7 @@ export default function Page() {
                 {PROVIDERS.map(({ key, label, course, event }) => (
                   <div
                     key={key}
-                    className={`provider-summary-card provider-summary-card--${key}${course.supported ? " is-clickable" : ""}${filterProvider === key ? " is-active-filter" : ""}`}
+                    className={`provider-summary-card provider-summary-card--${key}${course.supported ? " is-clickable" : ""}${filterProviders.has(key) ? " is-active-filter" : ""}`}
                     onClick={course.supported ? () => handleProviderCardClick(key) : undefined}
                     role={course.supported ? "button" : undefined}
                     tabIndex={course.supported ? 0 : undefined}
@@ -763,25 +805,68 @@ export default function Page() {
           {/* ── 통합 필터 박스 ── */}
           {courses.length > 0 && (
             <div className="filter-box">
-              <input
-                type="text"
-                className="filter-input"
-                placeholder="강의명 검색..."
-                value={searchText}
-                onChange={(e) => { setSearchText(e.target.value); setVisibleCount(PAGE_SIZE_UI); }}
-              />
+              <div className="search-input-wrap">
+                <input
+                  type="text"
+                  className="filter-input"
+                  placeholder="강의명·강사·카테고리 검색..."
+                  value={searchText}
+                  onChange={(e) => { setSearchText(e.target.value); setVisibleCount(PAGE_SIZE_UI); }}
+                  onFocus={() => setSearchFocused(true)}
+                  onBlur={() => setTimeout(() => setSearchFocused(false), 120)}
+                  onKeyDown={(e) => { if (e.key === "Enter") commitRecentSearch(searchText); }}
+                />
+                {searchFocused && recentSearches.length > 0 && (
+                  <div className="recent-searches">
+                    <div className="recent-searches-head">
+                      <span>최근 검색어</span>
+                      <button
+                        type="button"
+                        className="recent-clear"
+                        onMouseDown={(e) => e.preventDefault()}
+                        onClick={clearRecentSearches}
+                      >
+                        전체 삭제
+                      </button>
+                    </div>
+                    <ul className="recent-list">
+                      {recentSearches.map((term) => (
+                        <li key={term}>
+                          <button
+                            type="button"
+                            className="recent-item"
+                            onMouseDown={(e) => e.preventDefault()}
+                            onClick={() => {
+                              setSearchText(term);
+                              setVisibleCount(PAGE_SIZE_UI);
+                              commitRecentSearch(term);
+                            }}
+                          >
+                            {term}
+                          </button>
+                        </li>
+                      ))}
+                    </ul>
+                  </div>
+                )}
+              </div>
 
               <div className="filter-box-row">
                 <div className="type-filter-row filter-box-providers">
-                  {PROVIDER_FILTERS.map((f) => (
-                    <button
-                      key={f.value}
-                      className={`type-filter-btn provider-filter-btn${filterProvider === f.value ? " active" : ""}`}
-                      onClick={() => { setFilterProvider(f.value); setVisibleCount(PAGE_SIZE_UI); }}
-                    >
-                      {f.label}
-                    </button>
-                  ))}
+                  {PROVIDER_FILTERS.map((f) => {
+                    const isActive = f.value === ""
+                      ? filterProviders.size === 0
+                      : filterProviders.has(f.value);
+                    return (
+                      <button
+                        key={f.value}
+                        className={`type-filter-btn provider-filter-btn${isActive ? " active" : ""}`}
+                        onClick={() => toggleProvider(f.value)}
+                      >
+                        {f.label}
+                      </button>
+                    );
+                  })}
                 </div>
 
                 <div className="filter-selects">
@@ -823,7 +908,7 @@ export default function Page() {
                     ★ 즐겨찾기만
                   </button>
 
-                  {(searchText || filterCategory || filterCredit || filterPriceIdx > 0 || filterProvider || showFavoritesOnly) && (
+                  {(searchText || filterCategory || filterCredit || filterPriceIdx > 0 || filterProviders.size > 0 || showFavoritesOnly) && (
                     <button
                       className="btn-reset"
                       onClick={handleResetFilters}

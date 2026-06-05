@@ -326,6 +326,13 @@ code {
   font-weight: 600;
 }
 
+.free-badge {
+  background: #ecfdf3 !important;
+  color: #059669 !important;
+  border: 1px solid #a7f3d0;
+  font-weight: 700;
+}
+
 .provider-badge {
   font-size: 10px !important;
 }
@@ -778,6 +785,59 @@ code {
   box-shadow: 0 0 0 3px rgba(239,71,111,0.1);
   background: var(--panel);
 }
+
+/* ── 최근 검색어 드롭다운 ──────────────────────────────── */
+.search-input-wrap {
+  position: relative;
+  width: 100%;
+}
+.search-input-wrap .filter-input {
+  width: 100%;
+  box-sizing: border-box;
+}
+.recent-searches {
+  position: absolute;
+  top: calc(100% + 6px);
+  left: 0;
+  right: 0;
+  z-index: 20;
+  background: var(--panel);
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  box-shadow: var(--shadow);
+  padding: 8px;
+  max-height: 280px;
+  overflow-y: auto;
+}
+.recent-searches-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 4px 8px 8px;
+  font-size: 12px;
+  color: var(--text-secondary, #8a8a99);
+}
+.recent-clear {
+  border: none;
+  background: none;
+  font-size: 12px;
+  color: var(--accent);
+  cursor: pointer;
+  padding: 2px 4px;
+}
+.recent-list { list-style: none; margin: 0; padding: 0; }
+.recent-item {
+  width: 100%;
+  text-align: left;
+  border: none;
+  background: none;
+  padding: 8px 10px;
+  font-size: 14px;
+  color: var(--text-primary);
+  border-radius: 8px;
+  cursor: pointer;
+}
+.recent-item:hover { background: var(--panel-soft); }
 
 .filter-select {
   padding: 9px 12px;

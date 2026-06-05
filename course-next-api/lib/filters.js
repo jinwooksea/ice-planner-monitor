@@ -5,6 +5,8 @@ export const PRICE_FILTERS = [
   { label: "5만원 이하",  test: (p) => p <= 50_000 },
   { label: "5–10만원",    test: (p) => p > 50_000 && p <= 100_000 },
   { label: "10만원 초과", test: (p) => p > 100_000 },
+  // 무료는 인덱스 안정성(URL 하위호환) 위해 끝에 추가
+  { label: "무료",        test: (p) => p === 0 },
 ];
 
 export const TYPE_FILTERS = [

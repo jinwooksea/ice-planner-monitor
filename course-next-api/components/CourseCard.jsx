@@ -71,10 +71,13 @@ export default function CourseCard({ course, isActive, onClick, query, isFavorit
         {course.isNew && <div className="course-new-badge">NEW</div>}
       </div>
 
-      {(course.isRecommended || course.provider === "teacherville" || course.provider === "hstudy" || course.provider === "neti" || course.badges?.length > 0) && (
+      {(course.isRecommended || course.price === 0 || course.provider === "teacherville" || course.provider === "hstudy" || course.provider === "neti" || course.badges?.length > 0) && (
         <div className="card-badges">
           {course.isRecommended && (
             <span className="badge recommend-badge">AI 추천</span>
+          )}
+          {course.price === 0 && (
+            <span className="badge free-badge">무료</span>
           )}
           {PROVIDER_LABELS[course.provider] && (
             <span className={`badge provider-badge provider-badge--${course.provider}`}>
