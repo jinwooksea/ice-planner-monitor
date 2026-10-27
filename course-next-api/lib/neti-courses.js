@@ -19,8 +19,10 @@
 import { load } from "cheerio";
 import { REQUEST_DELAY_MS, MAX_EXTERNAL_REQUESTS, sleep } from "@/lib/cache";
 
-const BASE_URL = "https://www.neti.go.kr";
+// 2026-10: 연수 신청이 배움누리터(learning.neti.go.kr)로 이전됨 — 기존 www 주소는 목록 0개
+const BASE_URL = "https://learning.neti.go.kr";
 const LIST_PATH = "/lh/ms/ac/atnlcAplyListView.do";
+const MENU_ID = "3000002320";
 
 const MAX_NETI_PAGES = parseInt(process.env.NETI_MAX_PAGES ?? "5", 10);
 
@@ -31,15 +33,19 @@ const COMMON_HEADERS = {
   Accept:
     "text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8",
   "Accept-Language": "ko-KR,ko;q=0.9",
-  Referer:
-    "https://www.neti.go.kr/lh/ms/ac/atnlcAplyListView.do?menuId=1000006045",
+  Referer: `${BASE_URL}${LIST_PATH}?menuId=${MENU_ID}`,
 };
 
 // ── HTML 파싱 ─────────────────────────────────────────────
 
+// 배움누리터 마크업은 텍스트 사이에 줄바꿈·탭이 섞여 있어 공백을 하나로 접는다
+function cleanText(text) {
+  return (text ?? "").replace(/\s+/g, " ").trim();
+}
+
 function textWithoutTags($el) {
   $el.find("i").remove();
-  return $el.text().trim();
+  return cleanText($el.text());
 }
 
 function parseCoursesFromHtml(html) {
@@ -62,16 +68,17 @@ function parseCoursesFromHtml(html) {
       ? `${BASE_URL}${thumbSrc.startsWith("/") ? "" : "/"}${thumbSrc}`
       : "";
 
-    const detailUrl = `${BASE_URL}/lh/ms/ac/atnlcAplyDetailView.do?crseGnrtnId=${id}`;
+    const detailUrl = `${BASE_URL}/lh/ms/ac/atnlcAplyDetailView.do?menuId=${MENU_ID}&srchCrseGnrtnId=${id}`;
 
-    const courseType   = $li.find(".card_title .top .blue").text().trim();
-    const organization = $li.find(".card_title .top .fc_999").text().trim();
+    // 과정 구분 라벨은 색상 클래스가 과정마다 다름(원격=blue, 집합=red …) → 기관명(.fc_999)이 아닌 첫 라벨
+    const courseType   = cleanText($li.find(".card_title .top p:not(.fc_999)").first().text());
+    const organization = cleanText($li.find(".card_title .top .fc_999").text());
     const applyPeriod  = textWithoutTags($li.find(".info.icon_check").clone());
     const educationPeriod = textWithoutTags($li.find(".info.icon_time").clone());
-    const creditText   = $li.find(".info.icon_list").text().trim();
+    const creditText   = cleanText($li.find(".info.icon_list").text());
     const target       = textWithoutTags($li.find(".info.icon_edu").clone());
-    const rating       = $li.find(".star_score u").text().trim();
-    const applyCountRaw = $li.find(".info2 b").text().trim();
+    const rating       = cleanText($li.find(".star_score u").text());
+    const applyCountRaw = cleanText($li.find(".info2 b").text());
 
     items.push({
       id, title, thumbnail, detailUrl,
@@ -161,7 +168,7 @@ export function normalizeNetiCourses(rawList) {
 // ── 수집 함수 ─────────────────────────────────────────────
 
 async function fetchPage(pageIndex) {
-  const url = `${BASE_URL}${LIST_PATH}?menuId=1000006045&pageIndex=${pageIndex}`;
+  const url = `${BASE_URL}${LIST_PATH}?menuId=${MENU_ID}&pageIndex=${pageIndex}`;
   const res = await fetch(url, {
     method: "GET",
     headers: COMMON_HEADERS,
